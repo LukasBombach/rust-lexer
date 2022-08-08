@@ -1,3 +1,16 @@
+// V8 Tokens
+// https://source.chromium.org/chromium/v8/v8.git/+/edf3dab4660ed6273e5d46bd2b0eae9f3210157d:src/token.h
+
+// V8 Scanner
+// https://source.chromium.org/chromium/v8/v8.git/+/edf3dab4660ed6273e5d46bd2b0eae9f3210157d:src/scanner.cc;l=422
+
+// MDN Lexical Grammar
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar
+
+// ESTree Specs
+// https://github.com/estree/estree
+
+
 #[derive(PartialEq, Debug)]
 pub enum Token<'a> {
     // End of source indicator
@@ -116,6 +129,14 @@ mod tests {
     #[test]
     fn it_tokenizes_an_empty_str() {
         let mut tokens = tokenize("");
+        assert_eq!(tokens.next(), None);
+    }
+
+    #[test]
+    fn it_tokenizes_a_single_letter_token() {
+        let input = "=";
+        let mut tokens = tokenize(input);
+        assert_eq!(tokens.next(), Some(Token::Assign(&input[0..1])));
         assert_eq!(tokens.next(), None);
     }
 
