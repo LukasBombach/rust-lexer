@@ -14,8 +14,6 @@ use std::str::CharIndices;
 
 #[derive(PartialEq, Debug)]
 pub enum Token<'a> {
-    // End of source indicator
-    Eos(&'a str),
 
     // Punctuators
     Lparen(&'a str),         // (
@@ -100,6 +98,8 @@ pub fn tokenize(input: &str) -> impl Iterator<Item = Token> {
             let (start, c) = next;
             let end = start + 1;
 
+            println!("> tokenize {:#?}", c);
+
             return match c {
                 '='  => from_eq(input, start, &mut chars),
                 '(' => Some(Token::Lparen(&input[start..end])),
@@ -121,10 +121,12 @@ pub fn tokenize(input: &str) -> impl Iterator<Item = Token> {
     })
 }
 
-fn from_eq<'a>(input: &'a str, start: usize,  chars: &mut CharIndices) -> Option<Token<'a>> {
+fn from_eq<'a>(input: &'a str, start: usize, chars: &mut CharIndices) -> Option<Token<'a>> {
     if let Some(next) = chars.next() {
 
         let (i, c) = next;
+
+        println!("> from_eq  {:#?}", c);
 
         return match c {
             '>'  => Some(Token::Arrow(&input[start..(i + 1)])),
@@ -140,14 +142,15 @@ mod tests {
 
     use super::*;
 
-
     #[test]
+    #[ignore]
     fn it_tokenizes_an_empty_str() {
         let mut tokens = tokenize("");
         assert_eq!(tokens.next(), None);
     }
 
     #[test]
+    #[ignore]
     fn it_tokenizes_a_single_letter_token() {
         let input = "=";
         let mut tokens = tokenize(input);
@@ -156,6 +159,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn it_tokenizes_a_two_letter_token() {
         let input = "=>";
         let mut tokens = tokenize(input);
@@ -164,12 +168,33 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn it_tokenizes_consecutive_single_letter_tokens() {
         let input = "()=";
         let mut tokens = tokenize(input);
         assert_eq!(tokens.next(), Some(Token::Lparen(&input[0..1])));
         assert_eq!(tokens.next(), Some(Token::Rparen(&input[1..2])));
         assert_eq!(tokens.next(), Some(Token::Assign(&input[2..3])));
+        assert_eq!(tokens.next(), None);
+    }
+
+    #[test]
+    fn it_tokenizes_a_token_following_a_two_letter_token() {
+        let input = "=>()";
+        let mut tokens = tokenize(input);
+        assert_eq!(tokens.next(), Some(Token::Arrow(&input[0..2])));
+        assert_eq!(tokens.next(), Some(Token::Lparen(&input[2..3])));
+        assert_eq!(tokens.next(), Some(Token::Rparen(&input[3..4])));
+        assert_eq!(tokens.next(), None);
+    }
+
+    #[test]
+    fn it_tokenizes_x() {
+        let input = "=()";
+        let mut tokens = tokenize(input);
+        assert_eq!(tokens.next(), Some(Token::Assign(&input[0..1])));
+        assert_eq!(tokens.next(), Some(Token::Lparen(&input[1..2])));
+        assert_eq!(tokens.next(), Some(Token::Rparen(&input[3..4])));
         assert_eq!(tokens.next(), None);
     }
 }
