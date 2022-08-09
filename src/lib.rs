@@ -100,10 +100,8 @@ pub fn tokenize(input: &str) -> impl Iterator<Item = Token> {
             let (start, c) = next;
             let end = start + 1;
 
-            println!("\n> {:#?}", c);
-
             return match c {
-                '='  => from_eq(input, start, chars), // Some(Token::Assign(&input[start..end])),
+                '='  => from_eq(input, start, &mut chars),
                 '(' => Some(Token::Lparen(&input[start..end])),
                 ')' => Some(Token::Rparen(&input[start..end])),
                 '[' => Some(Token::Lbrack(&input[start..end])),
@@ -123,13 +121,13 @@ pub fn tokenize(input: &str) -> impl Iterator<Item = Token> {
     })
 }
 
-fn from_eq<'a>(input: &'a str, start: usize, mut chars: CharIndices) -> Option<Token<'a>> {
+fn from_eq<'a>(input: &'a str, start: usize,  chars: &mut CharIndices) -> Option<Token<'a>> {
     if let Some(next) = chars.next() {
 
         let (i, c) = next;
 
         return match c {
-            '>'  => Some(Token::Assign(&input[start..(i + 1)])),
+            '>'  => Some(Token::Arrow(&input[start..(i + 1)])),
             _ => Some(Token::Assign(&input[start..i])),
         }
     }
@@ -154,11 +152,10 @@ mod tests {
         let input = "=";
         let mut tokens = tokenize(input);
         assert_eq!(tokens.next(), Some(Token::Assign(&input[0..1])));
-        // assert_eq!(tokens.next(), None);
+        assert_eq!(tokens.next(), None);
     }
 
     #[test]
-    #[ignore]
     fn it_tokenizes_a_two_letter_token() {
         let input = "=>";
         let mut tokens = tokenize(input);
