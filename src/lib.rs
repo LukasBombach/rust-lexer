@@ -10,6 +10,7 @@
 // ESTree Specs
 // https://github.com/estree/estree
 
+use std::str::CharIndices;
 
 #[derive(PartialEq, Debug)]
 pub enum Token<'a> {
@@ -89,35 +90,48 @@ pub enum Token<'a> {
     Unknown(&'a str),
 }
 
-pub fn tokenize(input: &str)  -> impl Iterator<Item = Token> {
-    let mut chars = input.char_indices();
-
+pub fn tokenize(input: &str) -> impl Iterator<Item = Token> {
     std::iter::from_fn(move || {
+        let mut chars = input.char_indices();
 
-            if let Some(next) = chars.next() {
+        if let Some(next) = chars.next() {
 
-                let (start, c) = next;
-                let end = start + 1;
+            let (start, c) = next;
+            let end = start + 1;
 
-                return match c {
-                    '='  => Some(Token::Assign(&input[start..end])),
-                    '(' => Some(Token::Lparen(&input[start..end])),
-                    ')' => Some(Token::Rparen(&input[start..end])),
-                    '[' => Some(Token::Lbrack(&input[start..end])),
-                    ']' => Some(Token::Rbrack(&input[start..end])),
-                    '{' => Some(Token::Lbrace(&input[start..end])),
-                    '}' => Some(Token::Rbrace(&input[start..end])),
-                    ':' => Some(Token::Colon(&input[start..end])),
-                    ';' => Some(Token::Semicolon(&input[start..end])),
-                    '.' => Some(Token::Period(&input[start..end])),
-                    '?' => Some(Token::Conditional(&input[start..end])),
-                    _ => Some(Token::Unknown(&input[start..end])),
-                }
-
+            return match c {
+                '='  => from_eq(input, start, chars), // Some(Token::Assign(&input[start..end])),
+                '(' => Some(Token::Lparen(&input[start..end])),
+                ')' => Some(Token::Rparen(&input[start..end])),
+                '[' => Some(Token::Lbrack(&input[start..end])),
+                ']' => Some(Token::Rbrack(&input[start..end])),
+                '{' => Some(Token::Lbrace(&input[start..end])),
+                '}' => Some(Token::Rbrace(&input[start..end])),
+                ':' => Some(Token::Colon(&input[start..end])),
+                ';' => Some(Token::Semicolon(&input[start..end])),
+                '.' => Some(Token::Period(&input[start..end])),
+                '?' => Some(Token::Conditional(&input[start..end])),
+                _ => Some(Token::Unknown(&input[start..end])),
             }
 
-            return None
+        }
+
+        None
     })
+}
+
+fn from_eq<'a>(input: &'a str, start: usize, mut chars: CharIndices) -> Option<Token<'a>> {
+    if let Some(next) = chars.next() {
+
+        let (i, c) = next;
+
+        return match c {
+            '>'  => Some(Token::Assign(&input[start..(i + 1)])),
+            _ => Some(Token::Assign(&input[start..i])),
+        }
+    }
+    
+    Some(Token::Assign(&input[start..(start + 1)]))
 }
 
 #[cfg(test)]
@@ -137,6 +151,14 @@ mod tests {
         let input = "=";
         let mut tokens = tokenize(input);
         assert_eq!(tokens.next(), Some(Token::Assign(&input[0..1])));
+        assert_eq!(tokens.next(), None);
+    }
+
+    #[test]
+    fn it_tokenizes_a_two_letter_token() {
+        let input = "=>";
+        let mut tokens = tokenize(input);
+        assert_eq!(tokens.next(), Some(Token::Arrow(&input[0..2])));
         assert_eq!(tokens.next(), None);
     }
 
