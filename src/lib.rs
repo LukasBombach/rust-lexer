@@ -117,9 +117,7 @@ impl<'a> Iterator for Reader<'a> {
 }
 
 pub fn tokenize(input: &str) -> impl Iterator<Item = Token> {
-
     let mut reader = Reader::new(input);
-
 
     std::iter::from_fn(move || {
 
