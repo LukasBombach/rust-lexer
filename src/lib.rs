@@ -88,12 +88,42 @@ pub enum Token<'a> {
     Unknown(&'a str),
 }
 
+struct Reader<'a> {
+    chars: CharIndices<'a>,
+    peeked: Option<(usize, char)>,
+}
+
+impl<'a> Reader<'a> {
+    pub fn new(input: &str) -> Reader {
+        Reader {
+            chars: input.char_indices(),
+            peeked: None,
+        }
+    }
+}
+
+impl<'a> Iterator for Reader<'a> {
+    type Item = (usize, char);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.peeked != None {
+            let ret = self.peeked;
+            self.peeked = None;
+            return ret;
+        }
+        self.chars.next()
+
+    }
+}
+
 pub fn tokenize(input: &str) -> impl Iterator<Item = Token> {
-    let mut chars = input.char_indices();
+
+    let mut reader = Reader::new(input);
+
 
     std::iter::from_fn(move || {
 
-        if let Some(next) = chars.next() {
+        if let Some(next) = reader.next() {
 
             let (start, c) = next;
             let end = start + 1;
@@ -101,7 +131,7 @@ pub fn tokenize(input: &str) -> impl Iterator<Item = Token> {
             println!("> tokenize {:#?}", c);
 
             return match c {
-                '='  => from_eq(input, start, &mut chars),
+                '='  => from_eq(input, start, &mut reader),
                 '(' => Some(Token::Lparen(&input[start..end])),
                 ')' => Some(Token::Rparen(&input[start..end])),
                 '[' => Some(Token::Lbrack(&input[start..end])),
@@ -121,8 +151,8 @@ pub fn tokenize(input: &str) -> impl Iterator<Item = Token> {
     })
 }
 
-fn from_eq<'a>(input: &'a str, start: usize, chars: &mut CharIndices) -> Option<Token<'a>> {
-    if let Some(next) = chars.next() {
+fn from_eq<'a>(input: &'a str, start: usize, reader: &mut Reader) -> Option<Token<'a>> {
+    if let Some(next) = reader.next() {
 
         let (i, c) = next;
 
