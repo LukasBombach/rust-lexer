@@ -11,6 +11,7 @@
 // https://github.com/estree/estree
 
 use std::str::CharIndices;
+use std::iter::Peekable;
 
 #[derive(PartialEq, Debug)]
 pub enum Token<'a> {
@@ -88,47 +89,8 @@ pub enum Token<'a> {
     Unknown(&'a str),
 }
 
-struct Reader<'a> {
-    chars: CharIndices<'a>,
-    peeked: Option<(usize, char)>,
-}
-
-impl<'a> Reader<'a> {
-    pub fn new(input: &str) -> Reader {
-        Reader {
-            chars: input.char_indices(),
-            peeked: None,
-        }
-    }
-
-    // todo what if peeked != None
-    pub fn peek(&mut self) -> Option<(usize, char)> {
-            self.peeked = self.next();
-            self.peeked
-    }
-
-    pub fn clear_peek(&mut self) -> () {
-        self.peeked = None;
-}
-}
-
-impl<'a> Iterator for Reader<'a> {
-    type Item = (usize, char);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.peeked != None {
-            let ret = self.peeked;
-            self.peeked = None;
-            return ret;
-        }
-
-        self.chars.next()
-
-    }
-}
-
 pub fn tokenize(input: &str) -> impl Iterator<Item = Token> {
-    let mut reader = Reader::new(input);
+    let mut reader = input.char_indices().peekable();
 
     std::iter::from_fn(move || {
 
@@ -160,18 +122,20 @@ pub fn tokenize(input: &str) -> impl Iterator<Item = Token> {
     })
 }
 
-fn from_eq<'a>(input: &'a str, start: usize, reader: &mut Reader) -> Option<Token<'a>> {
+fn from_eq<'a>(input: &'a str, start: usize, reader: &mut Peekable<CharIndices>) -> Option<Token<'a>> {
     if let Some(next) = reader.peek() {
 
         let (i, c) = next;
 
         // println!("> from_eq  {:#?}", c);
 
-        reader.clear_peek();
-
         return match c {
-            '>'  => Some(Token::Arrow(&input[start..(i + 1)])),
-            _ => Some(Token::Assign(&input[start..i])),
+            '>'  => {
+                let v = Some(Token::Arrow(&input[start..(i + 1)]));
+                reader.next();
+                return v;
+            },
+            _ => Some(Token::Assign(&input[start..*i])),
         }
     }
     
@@ -184,14 +148,12 @@ mod tests {
     use super::*;
 
     #[test]
-    #[ignore]
     fn it_tokenizes_an_empty_str() {
         let mut tokens = tokenize("");
         assert_eq!(None, tokens.next());
     }
 
     #[test]
-    #[ignore]
     fn it_tokenizes_a_single_letter_token() {
         let input = "=";
         let mut tokens = tokenize(input);
@@ -200,7 +162,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn it_tokenizes_a_two_letter_token() {
         let input = "=>";
         let mut tokens = tokenize(input);
@@ -209,7 +170,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn it_tokenizes_consecutive_single_letter_tokens() {
         let input = "()=";
         let mut tokens = tokenize(input);
@@ -220,7 +180,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn it_tokenizes_a_token_following_a_two_letter_token() {
         let input = "=>()";
         let mut tokens = tokenize(input);
