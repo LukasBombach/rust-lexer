@@ -99,8 +99,6 @@ pub fn tokenize(input: &str) -> impl Iterator<Item = Token> {
             let (start, c) = next;
             let end = start + 1;
 
-            // println!("> tokenize {:#?}", c);
-
             return match c {
                 '='  => from_eq(input, start, &mut reader),
                 '(' => Some(Token::Lparen(&input[start..end])),
@@ -126,8 +124,6 @@ fn from_eq<'a>(input: &'a str, start: usize, reader: &mut Peekable<CharIndices>)
     if let Some(next) = reader.peek() {
 
         let (i, c) = next;
-
-        // println!("> from_eq  {:#?}", c);
 
         return match c {
             '>'  => {
@@ -195,7 +191,7 @@ mod tests {
         let mut tokens = tokenize(input);
         assert_eq!(Some(Token::Assign(&input[0..1])), tokens.next());
         assert_eq!(Some(Token::Lparen(&input[1..2])), tokens.next());
-        // assert_eq!(Some(Token::Rparen(&input[2..3])), tokens.next());
-        // assert_eq!(None, tokens.next());
+        assert_eq!(Some(Token::Rparen(&input[2..3])), tokens.next());
+        assert_eq!(None, tokens.next());
     }
 }
